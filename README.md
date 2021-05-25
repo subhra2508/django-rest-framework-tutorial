@@ -1,24 +1,24 @@
-GET - INORDER TO GET DATA
-POST - INORDER TO CREATE DATA
-PUT - COMPLETE UPDATE OF THE DATA
-PATCH - PARTIAL UPDATE OF THE DATA
-DELETE - INORDER TO DELETE THE DATA
+- GET - INORDER TO GET DATA
+- POST - INORDER TO CREATE DATA
+- PUT - COMPLETE UPDATE OF THE DATA
+- PATCH - PARTIAL UPDATE OF THE DATA
+- DELETE - INORDER TO DELETE THE DATA
 
-django-rest framework
+# django-rest framework
 
 - every row in the model is a object in python
   thses complex datatype needs to be convert into python native datatype ,this process is called
   serialization.
 
-#serializer
+# serializer
 complex data type to simple python data type
 the reverse is also true
 
 - DRF provides serializer class to serialize and deserialize
-  #How to create serializer class
-  from rest_framework import serializers
-
+  - How to create serializer class
+  
 ```py
+from rest_framework import serializers
 class ModelNameSerializer(serializers.serializer):
 ```
 
