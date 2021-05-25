@@ -578,5 +578,7 @@ router = DefaultRouter() # Creating Default Router Object
 router.register('studentapi',views.StudentViewSet,basename='student') #Register StudentViewSet with Router
 
 urlpatterns = [
-  path("",include(router.urls)),
+  path("",include(router.urls)),# The API URL's are now determined automatically by the router.
 ]
+```
+
