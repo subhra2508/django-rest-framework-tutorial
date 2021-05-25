@@ -197,7 +197,7 @@ class StudentSerializer(serializers.Serializer):
     return data
 ```
 
-# Validators
+### Validators
 - Most of the time you're dealing with validation in REST framework you'll simply be relying on the default
 field validation , or writing explicit validation methods on serializer or field classes
 
