@@ -479,7 +479,7 @@ class StudentDestroy(DestroyModelMixin,GenericAPIView):
 ```
 
 
-### Concrete View Class
+# Concrete View Class
 
 - The following classes are the concrete generic views.
 - If you're using generic views this is normally the level you'll be working at unless you need heavily customized behavior.
