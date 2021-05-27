@@ -19,33 +19,9 @@ from rest_framework.generics import GenericAPIView
 from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin
 
 
+from rest_framework import viewsets
+
 # Both the create and list are together becoz they don't want pk
-
-
-class LCStudentAPI(GenericAPIView, ListModelMixin, CreateModelMixin):
-    queryset = Student.objects.all()
-    serializer_class = StudentSerializer
-
-    def get(self, request, *args, **kwargs):
-        return self.list(request, *args, **kwargs)
-
-    def post(self, request, *args, **kwargs):
-        return self.create(request, *args, **kwargs)
-
-
-# Retrieve Update and Destroy - PK Required
-class RUDStudentAPI(GenericAPIView, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin):
-    queryset = Student.objects.all()
-    serializer_class = StudentSerializer
-
-    def get(self, request, *args, **kwargs):
-        return self.retrieve(request, *args, **kwargs)
-
-    def put(self, request, *args, **kwargs):
-        return self.update(request, *args, **kwargs)
-
-    def delete(self, request, *args, **kwargs):
-        return self.destroy(request, *args, **kwargs)
 
 
 # Model Object - Single Student Data
@@ -340,3 +316,60 @@ class RUDStudentAPI(GenericAPIView, RetrieveModelMixin, UpdateModelMixin, Destro
 
 #     def delete(self, request, *args, **kwargs):
 #         return self.destroy(request, *args, **kwargs)
+
+# SERVING ALL OF THESE USING 2 URLS , CREATING GROUPS
+
+# class LCStudentAPI(GenericAPIView, ListModelMixin, CreateModelMixin):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+
+#     def get(self, request, *args, **kwargs):
+#         return self.list(request, *args, **kwargs)
+
+#     def post(self, request, *args, **kwargs):
+#         return self.create(request, *args, **kwargs)
+
+
+# # Retrieve Update and Destroy - PK Required
+# class RUDStudentAPI(GenericAPIView, RetrieveModelMixin, UpdateModelMixin, DestroyModelMixin):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+
+#     def get(self, request, *args, **kwargs):
+#         return self.retrieve(request, *args, **kwargs)
+
+#     def put(self, request, *args, **kwargs):
+#         return self.update(request, *args, **kwargs)
+
+#     def delete(self, request, *args, **kwargs):
+#         return self.destroy(request, *args, **kwargs)
+
+
+class StudentViewSet(viewsets.ViewSet):
+    def list(self, request):
+        stu = Student.objects.all()
+        serializer = StudentSerializer(stu, many=True)
+        return Response(serializer.data)
+
+    def retrieve(self, request, pk=None):
+        id = pk
+        if id is not None:
+            stu = Student.objects.get(id=id)
+            serializer = StudentSerializer(stu)
+            return Response(serializer.data)
+
+    def create(self, request):
+        serializer = StudentSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg': 'Data Created'}, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+    def update(self, request, pk):
+        id = pk
+        stu = Student.objects.get(pk=id)
+        serializer = StudentSerializer(stu, data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'msg': 'Complete Data Updated'})
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)

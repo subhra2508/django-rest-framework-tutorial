@@ -36,8 +36,9 @@ urlpatterns = [
     # path('studentapi/<str:pk>/', StudentRetrive.as_view()),
     # path('studentapi/<str:pk>/', StudentUpdate.as_view()),
     # path('studentapi/<str:pk>/', StudentDestroy.as_view()),
-    path('studentapi/', LCStudentAPI.as_view()),
-    path('studentapi/<str:pk>/', RUDStudentAPI.as_view()),
+    # path('studentapi/', LCStudentAPI.as_view()),
+    # path('studentapi/<str:pk>/', RUDStudentAPI.as_view()),
+
 ]
 #  path('stuinfo/<str:pk>/', student_details),
 #  path('stuinfo/', student_list),
