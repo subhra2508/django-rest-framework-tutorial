@@ -581,5 +581,290 @@ urlpatterns = [
   path("",include(router.urls)),# The API URL's are now determined automatically by the router.
 ]
 ```
+# ModelViewSet Class & ReadOnlyModelViewSet
 
+### ModelViewSet Class
+
+- The ModelViewSet class inherits from GenericAPIView and includes implementations for various actions,by mixing in the behaviour of the various mixin classes.
+
+- The actions provided by the ModelViewSet class are list(),retrieve(),create(),update(),partial_update(),and destroy(). You can use any of the standard attributes or method overrides provides by GenericAPIView
+
+```py
+class StudentViewSet(viewsets.ModelViewSet):
+  queryset = Student.objects.all()
+  serializer_class = StudentSerializer
+```
+
+### ReadOnlyModelViewSet Class
+
+- The ReadOnlyModelViewSet class also inherit from GenericAPIView.As with ModelViewSet it also includes implementations for various actions,
+but unlike ModelViewSet only provides the 'read-only' actions,list(), and retrieve(). You can use any of the standard attributes and method overrides available to GenericAPIView
+
+```py
+#In views.py
+class StudentReadOnlyModelViewSet(viewsets.ReadOnlyModelViewSet):
+  queryset = Student.objects.all()
+  serializer_class = StudentSerializer
+```
+# Why use Authentication & Permission ?
+
+- Currently Our API doesn't have any restrictions who can edit or delete Data. We'd Like to have some more advanced behavior in order to make sure that:
+  - Data is always associated with a creator
+  - Only authenticated users may create Data
+  - Only the creator of a Data may update or delete it
+  - Unauthenticated requests should have full read-only access
+
+### Authentication
+
+- Authentication is the mechanism of associating an incoming request with a set of identifying credentials, such as the user the request came from, or the token that it was signed with. The permission and throttling policies can then use those credentials to determine if the request should be permitted.
+
+- Authentication is always run at the very start of the view , before the permission and throttling checks occure , and before any other code is allowed to proceed.
+
+- REST framework provides a number of authentication schemes out of the box, and also allows you to implement custom schemes.
+  - BasicAuthentication
+  - SessionAuthentication
+  - TokenAuthentication
+  - RemoteUserAuthentication
+  - Custom authentication
+
+### BasicAuthentication
+
+- This authentication scheme uses HTTP Basic Authentication, signed against a user's username and password.
+- Basic authentication is generally only appropriate for testing not for production
+- If successfully authenticated, BasicAuthentication provides the following crendentials
+  - request.user will be a Django User instance
+  - request.auth will be None
+
+- Unauthenticated responses that are denied permission will result in an HTTP 401 Unauthorized response with an appropriate WWW-Authenticate header. For example:
+  - WWW.Authenticate: Basic realm = "api"
+
+<em><u>Note:</u></em> If you use BasicAuthentication in production you must ensure that your API is only available over https.
+
+- You should also ensure that your API client will always re-request the username and password at login, and will never store those details to persistent storage.
+
+### Permission
+
+- Permissions are used to grant or deny access for different classes of users to different parts of API.
+- Permission checks are always run at the very start of the view, before any other code is allowed to proceed.
+- Permission checks will typically use the authentication information in the request.user and request.auth properties to determine if the incoming request should be permitted.
+
+### Permission Classes
+
+- permissions in REST framework are always defined as a list of permission classes.
+
+  - AllowAny
+    - The AllowAny permission class will allow unrestricted access,regardless of if the request was authenticated or unauthenticated.
+    - This permission is not strictly required, since you can achieve the same result by using an empty list or tuple for the permission setting,but you may find it useful to specify this class because it makes the intention explicit.
+
+  - IsAuthenticated
+    - The IsAuthenticated permission class will deny permission to any unauthenticated user, and allow permission otherwise.
+    - This permission is suitable if you want your API to only accessible to registered users.
+
+  - IsAdminUser
+    - The IsAdminUser permission class will deny permission to any user,unless user.is_staff is True in which case permission will be allowed.
+    - This permission is suitable if you want your API to only be accessible to a subset of trusted administrators.
+
+  - IsAuthenticatedOrReadOnly
+    - The IsAuthenticatedOrReadOnly will allow authenticated users to perform any request. Requests for unauthorised users will only be permitted if the request method is one of the "safe" methods e.i GET,HEAD or OPTIONS.
+    - This permission is suitable if you want your API to allow read permissions to anonymous users, and only write permissions to authenticated users.
+
+  - DjangoModelPermissions
+    - This permission class ties into Django's standard django.contrib.auth model permissions. This permission must only be applied to views that have a queryset property set.Authorization will only be granted if the user is authenticated and has the relevant model permissions assigned.
+      - POST request require the user to have the add permission on the model.
+      - PUT and PATCH requests require the user to have the change permission on the model.
+      - DELETE requests require the user to have the delete permission on the model.
+      - The default behaviour can also be overriden to support custom model permissions.For example, you might want to include a view model permission for GET requests.
+      - To use custom model permissions,override DJangoModelPermission and set the perms_map property.
+      - you can give these permission on djangoadmin page user section can add user😃
+
+  - DjangoModelPermissionsOrAnonReadOnly
+    - Similar to DjangoModelPermission, but also allows unauthenticated users to have read-only access to the API
+  - DjangoObjectPermission
+    - This permission class ties into Django's standard object permissions framework that allows per-object permissions on Models.In order to use this permission class,you'll also need to add a permission backend that supports object-level permissions,such as django-guardian.
+    - As with DjangoModelPermissions,this permission must only be applied to views that have a queryset property or get_queryset() method. Authorization will only be granted if the user is authenticated and has the relevant per-object permissions and relevant model permission assigned.
+
+
+  - Custom Permission 🚀
+    - To implement a custom permission, override BasePermission and implement either, or both , of the following methods:
+      - has_permission(self,request,view)
+      - has_object_permission(self,request,view,obj)
+    - The method should return True if the request should be granted access, and False otherwise
+```py
+#custompermission.py
+class MyPermission(BasePermission):
+  def has_permission(self,request,view)
+```
+- Third party packages that provides Permissions,you can read about these in their documentations
+  - DRF - Access policy
+  - Composed Permission
+  - REST Condition
+  - DRY Rest Permissions
+  - Django REST Framework Roles
+  - Django REST Framework API Key
+  - Django REST Framework Role Filters
+  - Django REST Framework PSQ
+
+
+# SessionAuthentication
+
+- This authentication scheme uses Django's default session backend for authentication.Session authentication is appropriate for AJAX clients that are running in the same session context as your website
+
+- If successfully authenticated,SessionAuthentication provides the following credentials.
+  - request.user will be a Django User instance
+  - request.auth will be None
+
+- Unauthenticated responses that are denied permission will result in an HTTP 403 Forbidden response.
+
+- If you're using an AJAX style API with SessionAuthentication, you'll need to make sure you include a valid CSRF token for any "unsafe" HTTP method calls, such as PUT,PATCH,POST or DELETE requests.
+
+# Authentication and Permissions in FunctionBasedViews
+- @authentication_classes([BasicAuthentication])
+- @permission_classes([IsAuthenticated])
+
+
+# TOKEN AUTHENTICATION
+
+- This authentication scheme uses a simple token-based HTTP Authentication scheme.Token authentication is appropriate for client-server setups, such as native desktop and mobile clients.
+- To use the TokenAuthentication scheme you'll need to configure the authentication classes to include TokenAuthentication, and additionally include rest_framework.authtoken in youe INSTALLED_APPS settings:
+
+```py
+INSTALLED_APPS = [
+  ...
+  'rest_framework.authtoken'
+]
+# Note: Make sure to run manage.py migrate after changing your settings. The rest_framework.authtoken app provides Django database migrations.
+```
+- If successfully authenticated, TokenAuthentication provides the following credentials.
+  - request.user will be a django User instance.
+  - request.auth will be a rest_framework.authtoken.models.Token instance.
+  - Unauthenticated responses that are denied permission will result in an HTTP 401 Unauthorized response with an appropriate WWW-Authenticate header.For example:
+    - WWW-Authenticate:Token
+    - The http command line tool may be useful for testing token authenticated APIs.For example:
+      - http http://127.0.0.1:8000/studentapi/'Authorization:Token 9944b09199c62bcf9418ad846dd0e4bbfc6ee4b'
+
+- <em>Note:</em><em>If you use TokenAuthentication in production you must ensure that your API is only available over https.</em>
+
+### Generate Token
+- Using Admin Application
+- Using Django manage.py command
+  - python manage.py drf_create_token<username> - This command will return API Token for the given user or creates a Token if token doesn't exist for user.
+- By exposing an API endpoint
+- Using Signals
+
+# How Client can Ask/Create Token
+- when using TokenAuthentication, you may want to provide a mechanism for clients to obtain a token given the username and password.
+
+- REST framework provides a built-in view to provide this behavior. To use it,add the obtain_auth_token view to your URLconf:
+```py
+from rest_framework.authtoken.views import obtain_auth_token
+
+urlpatterns = [
+  path('gettoken/',obtain_auth_token)
+]
+```
+The obtain_auth_token view will return a JSON response when valid username and password fields are POSTed to the view using form data or JSON:
+  - http POST http://127.0.0.1:8000/gettoken/ username = "name" password = "pass"
+  - server response : {'token':'9944b09199c62bcf9418ad846dd0e4bbfc6ee4b'}
+
+using httpie:
+
+GET Request
+http http://127.0.0.1:8000/studentapi/
+
+GET Request with Auth
+http http://127.0.0.1:8000/studentapi/"Authorization:Token 621edf999..."
+
+POST Request/Submitting Form
+http -f POST http://127.0.0.1:8000/studentapi/name=jay roll=14 city=nagpal "Authorization:Token 6234dregf..."
+
+PUT Request
+http -f POST http://127.0.0.1:8000/studentapi/1/name=jay roll=14 city=nagpal "Authorization:Token 6234dregf..."
+
+DELETE Request
+http DELETE http://127.0.0.1:8000/studentapi/4/"Authorization:Token 621edf999..."
+
+
+# CUSTOM AUTHENTICATION
+- To implement a custom authentication scheme,subclass BaseAuthentication and override the authenticate(self,request) method.
+- The method should return a two-tuple of (user,auth) if authentication succeeds, or None otherwise.
+
+# JSON WEB TOKEN AND SIMPLE JWT IN DJANGO REST FRAMEWORK
+
+- JSON Web Token is a fairly new standard which can be used for token-based authentication.Unlike the built-in TokenAuthentication scheme,JWT Authentication doesn't need to use a database to validate a token.
+
+- In drf-token the token are saved in database but in jwt doesn't need to use a database to validate a token.
+
+### Simple JWT
+- Simple JWT provides a JSON Web Token authentication backend for the DRF.It aims to cover the most common use cases of JWTs by offering a conservation set of default features.It also aims to be easily extensible in case a desired feature is not present.
+
+- To install :- pip install djangorestframework-simplejwt
+- Configure Simple JWT
+```py
+#In settings.py
+REST_FRAMEWORK = {
+  'DEFAULT_AUTHENTICATION_CLASSES':(
+    'rest_framework_simplejwt.authentication.JWTAuthentication',
+  )
+}
+
+#In urls.py
+from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView
+urlpatterns = [
+  path('gettoken/',TokenObtainPairView.as_view(),name='token_obtain_pair'),
+  path('refreshtoken/',TokenRefreshView.as_view(),name='token_refresh'),
+]
+```
+- You can also include a route for simple JWT's TokenVerifyView if you wish to allow API users to verify HMAC-signed tokens without having access to your signing key.
+
+```py
+# In urls.py
+from rest_framework_simplejwt.views import TokenObtainPairView,TokenRefreshView,TokenVerifyView
+
+urlpatterns = [
+  path('gettoken/',TokenObtainPairView.as_view(),name='token_obtain_pair')
+  path('refreshtoken/',TokenRefreshView.as_view(),name='token_refresh'),
+  path('verifytoken/',TokenVerifyView.as_view(),name='token_verify'),
+]
+
+# JWT DEFAULT SETTINGS
+from datetime import timedelta
+SIMPLE_JWT = {
+  'ACCESS_TOKEN_LIFETIME':timedelta(minutes=5),
+  'REFRESH_TOKEN_LIFETIME':timedelta(days=1),
+  'ROTATE_REFRESH_TOKENS':False,
+  'BLACKLIST_AFTER_ROTATION':True,
+
+  'ALGORITHM':'HS256',
+  'SIGNING_KEY':settings.SECRET_KEY,
+  'VERIFYING_KEY':None,
+  'AUDIENCE':None,
+  'AUTH_HEADER_TYPES':('Bearer',),
+  'USER_ID_FIELD':'id',
+  'USER_ID_CLAIM':'user_id',
+
+  'AUTH_TOKEN_CLASSES':('rest_framework_simplejwt.tokens.AccessToken',),
+  'TOKEN_TYPE_CLAIM':'token_type',
+
+  'JTI_CLAIM':'jti',
+
+  'SLIDING_TOKEN_REFRESH_EXP_CLAIM':'refresh_exp',
+  'SLIDING_TOKEN_LIFETIME':timedelta(minutes=5),
+  'SLIDING_TOKEN_REFRESH_LIFETIME':timedelta(days=1),
+}
+```
+# USE JWT
+
+### GET Token
+
+(using httpie)
+http POST http://127.0.0.1:8000/gettoken/ username="user1" password="user1"
+
+### Verify Token
+http POST http://127.0.0.1:8000/verifytoken/ token="eyJoeXAioJKV1..."
+
+### Refresh Token
+http POST http://127.0.0.1:8000/refreshtoken/ refresh="eyJoeXAioJKV1..."
+
+### Permission classes 
+- They are as it is no change
 

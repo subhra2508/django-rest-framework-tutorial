@@ -9,7 +9,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.views import View
 
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from rest_framework.views import APIView
@@ -20,6 +20,22 @@ from rest_framework.mixins import ListModelMixin, CreateModelMixin, RetrieveMode
 
 
 from rest_framework import viewsets
+
+from rest_framework import permissions
+from rest_framework.authentication import BasicAuthentication, TokenAuthentication
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly, DjangoModelPermissions
+
+from rest_framework.authentication import SessionAuthentication
+
+
+from restapi.custompermissions import MyPermission
+
+
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView, TokenVerifyView
+from rest_framework_simplejwt.authentication import JWTAuthentication
+
+# from restapi.custom-auth import CustomAuthentication
+
 
 # Both the create and list are together becoz they don't want pk
 
@@ -345,31 +361,146 @@ from rest_framework import viewsets
 #         return self.destroy(request, *args, **kwargs)
 
 
-class StudentViewSet(viewsets.ViewSet):
-    def list(self, request):
-        stu = Student.objects.all()
-        serializer = StudentSerializer(stu, many=True)
-        return Response(serializer.data)
+# class StudentViewSet(viewsets.ViewSet):
+#     def list(self, request):
+#         stu = Student.objects.all()
+#         serializer = StudentSerializer(stu, many=True)
+#         return Response(serializer.data)
 
-    def retrieve(self, request, pk=None):
-        id = pk
-        if id is not None:
-            stu = Student.objects.get(id=id)
-            serializer = StudentSerializer(stu)
-            return Response(serializer.data)
+#     def retrieve(self, request, pk=None):
+#         id = pk
+#         if id is not None:
+#             stu = Student.objects.get(id=id)
+#             serializer = StudentSerializer(stu)
+#             return Response(serializer.data)
 
-    def create(self, request):
-        serializer = StudentSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'msg': 'Data Created'}, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def create(self, request):
+#         serializer = StudentSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Data Created'}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
-    def update(self, request, pk):
-        id = pk
-        stu = Student.objects.get(pk=id)
-        serializer = StudentSerializer(stu, data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response({'msg': 'Complete Data Updated'})
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+#     def update(self, request, pk):
+#         id = pk
+#         stu = Student.objects.get(pk=id)
+#         serializer = StudentSerializer(stu, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Complete Data Updated'})
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     def partial_update(self, request, pk):
+#         id = pk
+#         stu = Student.objects.get(pk=id)
+#         serializer = StudentSerializer(stu, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Partial Data Updated'})
+#         return Response(serializer.errors)
+
+#     def destroy(self, request, pk):
+#         id = pk
+#         stu = Student.objects.get(id=id)
+#         stu.delete()
+#         return Response({'msg': 'Data created'})
+
+
+# ModelViewSet
+
+# class StudentModelViewSet(viewsets.ModelViewSet):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+
+# # BASIC AUTHENTICATION
+# class StudentModelViewSet(viewsets.ModelViewSet):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+#     authentication_classes = [BasicAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+# SESSION AUTHENTICATION
+# class StudentModelViewSet(viewsets.ModelViewSet):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+#     authentication_classes = [SessionAuthentication]
+#     # permission_classes = [IsAuthenticated]
+#     # permission_classes = [IsAuthenticatedOrReadOnly]
+#     # permission_classes = [DjangoModelPermissions]
+#     permission_classes = [MyPermission]
+
+
+# PERMISSIONS AND AUTHENTICATIONS IN FUNCTIONBASEDVIEWS ##########
+
+# @api_view(['GET', 'POST', 'PUT', 'PATCH', 'DELETE'])
+# @authentication_classes([BasicAuthentication])
+# @permission_classes([IsAuthenticated])
+# def student_api(request, pk=None):
+
+#     if request.method == 'GET':
+#         # id = request.data.get('id')
+#         id = pk
+#         if id is not None:
+#             stu = Student.objects.get(id=id)
+#             serializer = StudentSerializer(stu)
+#             return Response(serializer.data)
+#         stu = Student.objects.all()
+#         serializer = StudentSerializer(stu, many=True)
+#         return Response(serializer.data)
+
+#     if request.method == 'POST':
+#         serializer = StudentSerializer(data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Data created'}, status=status.HTTP_201_CREATED)
+#         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
+#     if request.method == 'PUT':
+#         # id = request.data.get('id')
+#         id = pk
+#         stu = Student.objects.get(pk=id)
+#         serializer = StudentSerializer(stu, data=request.data)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Data Updated'})
+#         return Response(serializer.errors, status=HTTP_400_BAD_REQUEST)
+
+#     if request.method == 'PATCH':
+#         # id = request.data.get('id')
+#         id = pk
+#         stu = Student.objects.get(pk=id)
+#         serializer = StudentSerializer(stu, data=request.data, partial=True)
+#         if serializer.is_valid():
+#             serializer.save()
+#             return Response({'msg': 'Data Updated'})
+#         return Response(serializer.errors)
+
+#     if request.method == 'DELETE':
+#         # id = request.data.get('id')
+#         id = pk
+#         stu = Student.objects.get(pk=id)
+#         stu.delete()
+
+########################################################
+# Token Authentication
+########################################################
+# class StudentModelViewSet(viewsets.ModelViewSet):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+#     authentication_classes = [TokenAuthentication]
+#     # permission_classes = [IsAuthenticated]
+
+
+# # CUSTOM AUTHENTICATION
+# class StudentModelViewSet(viewsets.ModelViewSet):
+#     queryset = Student.objects.all()
+#     serializer_class = StudentSerializer
+#     authentication_classes = [CustomAuthentication]
+#     permission_classes = [IsAuthenticated]
+
+# JWT AUTHENTICATION
+class StudentModelViewSet(viewsets.ModelViewSet):
+    queryset = Student.objects.all()
+    serializer_class = StudentSerializer
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
